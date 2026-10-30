@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miniguía 2 · Particionado, dominio y objetos del Directorio Activo</title>
+</head>
+<body>
+<!-- Insertar en Google Sites: Insertar > Por URL > Página completa -->
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2937;background:#fff;line-height:1.55;font-size:15px}
+.w{max-width:960px;margin:0 auto;padding:8px 16px 24px}
+h1{font-size:26px;color:#0b2a6f;margin:8px 0 4px}
+h2{font-size:19px;color:#0b2a6f;margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid #12b5cb}
+h3{font-size:16px;margin:14px 0 6px;color:#0b2a6f}
+p{margin:0 0 10px}
+.lead{color:#475569;font-size:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{border:1px solid #dbe3ef;border-radius:10px;padding:14px 16px;background:#f8fafc}
+.card.accent{border-left:4px solid #0b2a6f}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#075985;margin:2px 4px 2px 0}
+.tag.done{background:#dcfce7;color:#166534}.tag.wip{background:#fef9c3;color:#854d0e}.tag.todo{background:#f1f5f9;color:#475569}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 12px}
+th{background:#0b2a6f;color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+td{border-bottom:1px solid #e5e7eb;padding:8px 10px;vertical-align:top}
+tr:nth-child(even) td{background:#f8fafc}
+a{color:#0b5bd3}
+code{font-family:Consolas,'Courier New',monospace;font-size:13px;background:#eef2f7;padding:1px 5px;border-radius:4px}
+pre{background:#0b2a6f;color:#e6f7fb;border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:13px;line-height:1.5;margin:6px 0 14px}
+pre code{background:none;padding:0;color:inherit;font-size:13px}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;font-size:15px}
+.kv b{color:#0b2a6f}
+.note{font-size:13px;color:#64748b;border-left:3px solid #cbd5e1;padding:4px 10px;margin:10px 0}
+.step{display:flex;gap:12px;align-items:flex-start;margin:18px 0 6px}
+.step .n{flex:none;width:30px;height:30px;border-radius:50%;background:#12b5cb;color:#0b2a6f;font-weight:700;display:flex;align-items:center;justify-content:center}
+.step h3{margin:4px 0 0}
+figure{margin:8px 0 16px}figure img{max-width:100%;border:1px solid #dbe3ef;border-radius:8px}
+figcaption{font-size:13px;color:#64748b;margin-top:4px}
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.gal img{width:100%;border-radius:8px;border:1px solid #dbe3ef}
+ul{margin:4px 0 10px;padding-left:20px}li{margin:3px 0}
+@media(max-width:560px){.kv{grid-template-columns:1fr}table{font-size:13px}}
+</style>
+
+<div class="w">
+<h1>Miniguía 2 · Particionado, dominio y objetos del Directorio Activo</h1>
+<p><span class="tag done">Bloques 1 y 2</span><span class="tag">Responsables: Nacho y Unai</span><span class="tag">Revisores: Unai y Nadia</span></p>
+<p class="lead">Partiendo de las máquinas preparadas en la Miniguía 1, dejamos el servidor con IP fija, los tres discos particionados por línea de comandos, el dominio <b>medicalia.local</b> creado y toda la estructura del Directorio Activo: unidades organizativas, grupos, los 20 empleados y la cuenta de administración del grupo.</p>
+
+<h2>Datos comunes</h2>
+<div class="kv">
+<b>Equipo</b><span><code>GenteOperativa</code> (nombre del grupo, como pide el enunciado)</span>
+<b>Dominio</b><span><code>medicalia.local</code> · NetBIOS <code>MEDICALIA</code></span>
+<b>IP del servidor</b><span>10.0.2.10/24 · puerta de enlace 10.0.2.1</span>
+<b>Discos</b><span>Disco 0: 50 GB (sistema) · Disco 1: 10 GB · Disco 2: 30 GB</span>
+<b>Plantillas y scripts</b><span><code>C:\Plantillas</code></span>
+</div>
+
+<h2>Parte A · Servidor y dominio</h2>
+
+<div class="step"><div class="n">1</div><h3>IP fija</h3></div>
+<p>El controlador de dominio será el DNS de los clientes, así que su dirección no puede cambiar. En PowerShell como administrador, dentro del servidor:</p>
+<pre><code>New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 10.0.2.10 -PrefixLength 24 -DefaultGateway 10.0.2.1
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 8.8.8.8
+ping google.com</code></pre>
+<p class="note">El DNS 8.8.8.8 es provisional: en el paso 4 el servidor pasa a usarse a sí mismo.</p>
+
+<div class="step"><div class="n">2</div><h3>Particionado por línea de comandos</h3></div>
+<p>El cliente pide el primer disco para el sistema, parte del segundo para los ficheros de la empresa y el segundo y el tercero para las copias de seguridad del Directorio Activo. Lo hacemos con un script de <code>diskpart</code>, que se repite igual en cualquier servidor:</p>
+<pre><code>New-Item -Path C:\Plantillas -ItemType Directory -Force
+@'
+select disk 1
+online disk noerr
+attributes disk clear readonly noerr
+convert gpt noerr
+convert dynamic
+select disk 2
+online disk noerr
+attributes disk clear readonly noerr
+convert gpt noerr
+convert dynamic
+create volume simple size=5120 disk=1
+format fs=ntfs label="Copias_AD" quick
+assign letter=E
+extend disk=2
+create volume simple disk=1
+format fs=ntfs label="Ficheros" quick
+assign letter=F
+list volume
+exit
+'@ | Set-Content -Path C:\Plantillas\particionado.txt -Encoding ASCII
+diskpart /s C:\Plantillas\particionado.txt</code></pre>
+<ul>
+<li>Los discos 1 y 2 pasan a <b>dinámicos</b>: es la única forma de que un volumen ocupe dos discos.</li>
+<li><b>E: Copias_AD</b> empieza con 5 GB en el disco 1 y se extiende a todo el disco 2: un volumen <b>distribuido</b> de unos 35 GB.</li>
+<li><b>F: Ficheros</b> ocupa el resto del disco 1 (unos 5 GB).</li>
+</ul>
+<div class="grid">
+<figure><img src="img/b1-particionado.jpg" alt="Administrador de discos con el volumen distribuido"><figcaption>Administrador de discos: E: repartido entre los discos 1 y 2, F: en el disco 1.</figcaption></figure>
+<figure><img src="img/b1-diskpart.jpg" alt="Salida de list volume en diskpart"><figcaption>Salida de <code>list volume</code>.</figcaption></figure>
+</div>
+
+<div class="step"><div class="n">3</div><h3>Nombre del equipo</h3></div>
+<pre><code>Rename-Computer -NewName "GenteOperativa" -Restart</code></pre>
+
+<div class="step"><div class="n">4</div><h3>Directorio Activo y DNS</h3></div>
+<pre><code>Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "medicalia.local" -DomainNetbiosName "MEDICALIA" -InstallDns</code></pre>
+<p>El asistente pide la contraseña del <b>DSRM</b> (modo de restauración de servicios de directorio). La guardamos: la necesitaremos en el Producto 2. Tras el reinicio entramos como <code>MEDICALIA\Administrador</code> y el servidor pasa a ser su propio DNS, con salida a Internet a través de un reenviador:</p>
+<pre><code>Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 10.0.2.10
+Add-DnsServerForwarder -IPAddress 8.8.8.8
+Resolve-DnsName medicalia.local
+Resolve-DnsName google.com</code></pre>
+<figure><img src="img/b1-dominio.jpg" alt="Comprobación del dominio con Get-ADDomain"><figcaption>Comprobación: <code>hostname</code> y <code>Get-ADDomain</code> devuelven GenteOperativa y medicalia.local.</figcaption></figure>
+
+<h2>Parte B · Objetos del Directorio Activo</h2>
+<p>Estructura que creamos:</p>
+<pre><code>medicalia.local
+├── Medicalia          (empleados: aquí se vinculan las GPO comunes)
+│   ├── Presidencia  → G_Presidencia
+│   ├── Almacen      → G_Almacen
+│   ├── RRHH         → G_RRHH
+│   ├── Nutricion    → G_Nutricion
+│   ├── Financiero   → G_Financiero
+│   └── Operaciones  → G_Operaciones
+├── Administradores    (fuera de Medicalia: no les afectan las GPO de empleados)
+│   └── G_Administradores · Admin_GenteOperativa
+└── Equipos            (los 20 PC; aquí se vinculan las GPO de equipo)</code></pre>
+
+<div class="step"><div class="n">5</div><h3>Unidades organizativas</h3></div>
+<pre><code>Import-Module ActiveDirectory
+$dominio = (Get-ADDomain).DistinguishedName
+New-ADOrganizationalUnit -Name "Medicalia" -Path $dominio
+New-ADOrganizationalUnit -Name "Administradores" -Path $dominio
+New-ADOrganizationalUnit -Name "Equipos" -Path $dominio
+foreach ($d in 'Presidencia','Almacen','RRHH','Nutricion','Financiero','Operaciones') {
+    New-ADOrganizationalUnit -Name $d -Path "OU=Medicalia,$dominio"
+}
+# Los equipos que se unan al dominio caerán en la UO Equipos
+redircmp "OU=Equipos,$dominio"</code></pre>
+
+<div class="step"><div class="n">6</div><h3>Grupos de seguridad</h3></div>
+<p>Un grupo global de seguridad por departamento. Sirven para dar permisos en las carpetas (Miniguía 3) y para la política de contraseñas (Miniguía 5).</p>
+<pre><code>$unidades = Get-ADOrganizationalUnit -SearchBase "OU=Medicalia,$dominio" -SearchScope OneLevel -Filter *
+foreach ($u in $unidades) {
+    New-ADGroup -Name "G_$($u.Name)" -GroupScope Global -GroupCategory Security `
+        -Path $u.DistinguishedName -Description "Usuarios de $($u.Name)"
+}
+New-ADGroup -Name "G_Administradores" -GroupScope Global -GroupCategory Security `
+    -Path "OU=Administradores,$dominio"</code></pre>
+
+<div class="step"><div class="n">7</div><h3>Plantilla CSV de empleados</h3></div>
+<p>Los 20 empleados del organigrama están en <code>C:\Plantillas\usuarios.csv</code> (UTF-8). Cada fila incluye el único equipo desde el que puede iniciar sesión.</p>
+<pre><code>Nombre,Apellido,Usuario,Puesto,UnidadOrganizativa,Grupo,Equipo
+Maria,Ballester,mballester,Presidenta,Presidencia,G_Presidencia,PC-MBALLESTER
+Jorge,Perez,jperez,Jefe de Almacen,Almacen,G_Almacen,PC-JPEREZ
+Silvia,Sanchez,ssanchez,Jefa de Operaciones,Operaciones,G_Operaciones,PC-SSANCHEZ
+...  (20 filas en total)</code></pre>
+
+<div class="step"><div class="n">8</div><h3>Usuarios y equipos desde la plantilla</h3></div>
+<p>Por cada fila, el script crea el usuario en su UO, lo añade a su grupo, lo limita a su equipo y crea la cuenta de ese equipo en la UO Equipos. La contraseña inicial es común y se obliga a cambiarla en el primer inicio de sesión.</p>
+<pre><code>$dns  = (Get-ADDomain).DNSRoot
+$pass = Read-Host "Contraseña inicial" -AsSecureString
+foreach ($u in Import-Csv -Path C:\Plantillas\usuarios.csv -Encoding UTF8) {
+    $datos = @{
+        Name = "$($u.Nombre) $($u.Apellido)"; GivenName = $u.Nombre; Surname = $u.Apellido
+        DisplayName = "$($u.Nombre) $($u.Apellido)"; SamAccountName = $u.Usuario
+        UserPrincipalName = "$($u.Usuario)@$dns"; Title = $u.Puesto; Department = $u.UnidadOrganizativa
+        Path = "OU=$($u.UnidadOrganizativa),OU=Medicalia,$dominio"
+        AccountPassword = $pass; Enabled = $true; ChangePasswordAtLogon = $true
+    }
+    New-ADUser @datos
+    Add-ADGroupMember -Identity $u.Grupo -Members $u.Usuario
+    Set-ADUser -Identity $u.Usuario -LogonWorkstations $u.Equipo
+    New-ADComputer -Name $u.Equipo -Path "OU=Equipos,$dominio"
+}</code></pre>
+
+<div class="step"><div class="n">9</div><h3>Cuenta Admin_GenteOperativa</h3></div>
+<p>El enunciado pide una cuenta con el nombre del grupo y control total sobre el dominio, capaz de administrarlo desde cualquier equipo. La creamos en la UO Administradores y la añadimos a Admins. del dominio por su SID (termina en 512), que funciona igual en un servidor en español o en inglés.</p>
+<pre><code>New-ADUser -Name "Admin_GenteOperativa" -SamAccountName "Admin_GenteOperativa" `
+    -UserPrincipalName "Admin_GenteOperativa@$dns" -Path "OU=Administradores,$dominio" `
+    -AccountPassword (Read-Host "Contraseña" -AsSecureString) -Enabled $true
+$admins = Get-ADGroup -Identity "$((Get-ADDomain).DomainSID.Value)-512"
+Add-ADGroupMember -Identity $admins -Members "Admin_GenteOperativa"
+Add-ADGroupMember -Identity "G_Administradores" -Members "Admin_GenteOperativa"</code></pre>
+
+<h2>Comprobaciones</h2>
+<table>
+<tr><th>Comando</th><th>Resultado esperado</th></tr>
+<tr><td><code>Get-ADDomain | Select DNSRoot, NetBIOSName</code></td><td>medicalia.local · MEDICALIA</td></tr>
+<tr><td><code>Get-Volume</code></td><td>E: Copias_AD de unos 35 GB y F: Ficheros de unos 5 GB</td></tr>
+<tr><td><code>Get-ADGroup -Filter 'Name -like "G_*"'</code></td><td>7 grupos</td></tr>
+<tr><td><code>(Get-ADUser -Filter * -SearchBase "OU=Medicalia,$dominio").Count</code></td><td>20</td></tr>
+<tr><td><code>(Get-ADComputer -Filter * -SearchBase "OU=Equipos,$dominio").Count</code></td><td>20</td></tr>
+<tr><td><code>Get-ADPrincipalGroupMembership Admin_GenteOperativa</code></td><td>Admins. del dominio y G_Administradores</td></tr>
+</table>
+
+<h2>Decisiones</h2>
+<div class="grid">
+<div class="card accent"><h3>Volumen distribuido</h3><p>Une el espacio de dos discos en una sola unidad para las copias de seguridad. Por eso los discos se convierten a dinámicos.</p></div>
+<div class="card accent"><h3>Scripts y plantillas</h3><p>Crear 20 usuarios y 20 equipos a mano es lento y propenso a errores. Con el CSV el proceso es repetible.</p></div>
+<div class="card accent"><h3>LogonWorkstations</h3><p>Cumple el requisito de que cada empleado solo se autentique desde su ordenador.</p></div>
+<div class="card accent"><h3>UO de administradores aparte</h3><p>Las directivas de ciberseguridad se vinculan a Medicalia y no afectan a los administradores.</p></div>
+</div>
+
+<h2>Problemas frecuentes</h2>
+<table>
+<tr><th>Problema</th><th>Causa</th><th>Solución</th></tr>
+<tr><td><code>select disk 1</code> da error de Select-Object</td><td>Se escribió en PowerShell sin entrar en diskpart</td><td>Usar <code>diskpart /s</code> con el script</td></tr>
+<tr><td><code>convert gpt</code> falla</td><td>Disco sin conectar o de solo lectura</td><td>Las líneas <code>online disk</code> y <code>attributes disk clear readonly</code></td></tr>
+<tr><td>El usuario ya existe</td><td>El script se ejecutó dos veces</td><td>Volver a la instantánea anterior y repetirlo una sola vez</td></tr>
+<tr><td>Caracteres raros en los nombres</td><td>El CSV no está en UTF-8</td><td>Guardarlo en UTF-8 e importarlo con <code>-Encoding UTF8</code></td></tr>
+<tr><td>Falla el nombre del equipo</td><td>Más de 15 caracteres</td><td>Acortar la columna Equipo</td></tr>
+</table>
+
+</div>
+</body>
+</html>

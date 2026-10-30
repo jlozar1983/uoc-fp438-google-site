@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miniguía 6 · Directivas por departamento</title>
+</head>
+<body>
+<!-- Insertar en Google Sites: Insertar > Por URL > Página completa -->
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2937;background:#fff;line-height:1.55;font-size:15px}
+.w{max-width:960px;margin:0 auto;padding:8px 16px 24px}
+h1{font-size:26px;color:#0b2a6f;margin:8px 0 4px}
+h2{font-size:19px;color:#0b2a6f;margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid #12b5cb}
+h3{font-size:16px;margin:14px 0 6px;color:#0b2a6f}
+p{margin:0 0 10px}
+.lead{color:#475569;font-size:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{border:1px solid #dbe3ef;border-radius:10px;padding:14px 16px;background:#f8fafc}
+.card.accent{border-left:4px solid #0b2a6f}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#075985;margin:2px 4px 2px 0}
+.tag.done{background:#dcfce7;color:#166534}.tag.wip{background:#fef9c3;color:#854d0e}.tag.todo{background:#f1f5f9;color:#475569}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 12px}
+th{background:#0b2a6f;color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+td{border-bottom:1px solid #e5e7eb;padding:8px 10px;vertical-align:top}
+tr:nth-child(even) td{background:#f8fafc}
+a{color:#0b5bd3}
+code{font-family:Consolas,'Courier New',monospace;font-size:13px;background:#eef2f7;padding:1px 5px;border-radius:4px}
+pre{background:#0b2a6f;color:#e6f7fb;border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:13px;line-height:1.5;margin:6px 0 14px}
+pre code{background:none;padding:0;color:inherit;font-size:13px}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;font-size:15px}
+.kv b{color:#0b2a6f}
+.note{font-size:13px;color:#64748b;border-left:3px solid #cbd5e1;padding:4px 10px;margin:10px 0}
+.step{display:flex;gap:12px;align-items:flex-start;margin:18px 0 6px}
+.step .n{flex:none;width:30px;height:30px;border-radius:50%;background:#12b5cb;color:#0b2a6f;font-weight:700;display:flex;align-items:center;justify-content:center}
+.step h3{margin:4px 0 0}
+figure{margin:8px 0 16px}figure img{max-width:100%;border:1px solid #dbe3ef;border-radius:8px}
+figcaption{font-size:13px;color:#64748b;margin-top:4px}
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.gal img{width:100%;border-radius:8px;border:1px solid #dbe3ef}
+ul{margin:4px 0 10px;padding-left:20px}li{margin:3px 0}
+@media(max-width:560px){.kv{grid-template-columns:1fr}table{font-size:13px}}
+</style>
+
+<div class="w">
+<h1>Miniguía 6 · Directivas por departamento</h1>
+<p><span class="tag done">Bloque 6</span><span class="tag">Responsable: Xavier</span><span class="tag">Revisor: Nacho</span></p>
+<p class="lead">Cada departamento recibe su propia GPO, vinculada a su unidad organizativa, con un fondo de escritorio que muestra el nombre del departamento y la unidad de red de su carpeta. Así, cuando un empleado entra en una UO, hereda su fondo y su unidad sin tocar nada más.</p>
+
+<h2>Fondos de escritorio</h2>
+<p>Diseñamos un fondo por departamento con la imagen de Medicalia. El enunciado exige que las imágenes estén disponibles como recurso de red en el controlador de dominio, así que las guardamos en <b>SYSVOL</b>, que ya está compartido con todos los usuarios del dominio y se replica con él.</p>
+<div class="gal">
+<figure><img src="img/medicalia-presidencia.jpg" alt="Fondo Presidencia"><figcaption>Presidencia</figcaption></figure>
+<figure><img src="img/medicalia-almacen.jpg" alt="Fondo Almacén"><figcaption>Almacén</figcaption></figure>
+<figure><img src="img/medicalia-rrhh.jpg" alt="Fondo RRHH"><figcaption>RRHH</figcaption></figure>
+<figure><img src="img/medicalia-nutricion.jpg" alt="Fondo Nutrición"><figcaption>Nutrición</figcaption></figure>
+<figure><img src="img/medicalia-financiero.jpg" alt="Fondo Financiero"><figcaption>Financiero</figcaption></figure>
+<figure><img src="img/medicalia-operaciones.jpg" alt="Fondo Operaciones"><figcaption>Operaciones</figcaption></figure>
+</div>
+
+<div class="step"><div class="n">1</div><h3>Copiar las imágenes a SYSVOL</h3></div>
+<pre><code>$dns     = (Get-ADDomain).DNSRoot
+$destino = "\\$dns\SYSVOL\$dns\scripts\Wallpapers"
+New-Item -Path $destino -ItemType Directory -Force | Out-Null
+Copy-Item -Path "C:\Plantillas\Fondos\Medicalia-*.png" -Destination $destino
+Get-ChildItem $destino     # deben aparecer los seis fondos</code></pre>
+
+<div class="step"><div class="n">2</div><h3>Una GPO por departamento con su fondo</h3></div>
+<pre><code>$dn = (Get-ADDomain).DistinguishedName
+$k  = "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System"
+foreach ($d in 'Presidencia','Almacen','RRHH','Nutricion','Financiero','Operaciones') {
+    $gpo = "Medicalia-$d"
+    New-GPO -Name $gpo -Comment "Directivas específicas de $d" | Out-Null
+    New-GPLink -Name $gpo -Target "OU=$d,OU=Medicalia,$dn" -LinkEnabled Yes | Out-Null
+    (Get-GPO -Name $gpo).GpoStatus = "ComputerSettingsDisabled"
+    Set-GPRegistryValue -Name $gpo -Key $k -ValueName "Wallpaper" -Type String `
+        -Value "$destino\Medicalia-$d.png" | Out-Null
+    Set-GPRegistryValue -Name $gpo -Key $k -ValueName "WallpaperStyle" -Type String -Value "4" | Out-Null
+}
+Get-GPO -All | Where-Object DisplayName -like 'Medicalia-*' | Select-Object DisplayName, GpoStatus</code></pre>
+<p class="note">Deben aparecer las dos GPO comunes de empleados y las seis de departamento.</p>
+
+<div class="step"><div class="n">3</div><h3>Unidades de red del departamento</h3></div>
+<p>La carpeta personal ya se monta como <b>P:</b> desde la cuenta de cada usuario (Miniguía 3). Aquí añadimos <b>T:</b> con la carpeta de su departamento, sobre el recurso <code>Datos$</code>. Las preferencias de directiva no tienen cmdlet, así que se configuran en la consola.</p>
+<table>
+<tr><th>GPO</th><th>Ruta de la unidad T:</th></tr>
+<tr><td>Medicalia-Presidencia</td><td><code>\\GenteOperativa\Datos$</code> (toda la raíz: la presidenta lee todos los departamentos)</td></tr>
+<tr><td>Medicalia-Almacen</td><td><code>\\GenteOperativa\Datos$\Almacen</code></td></tr>
+<tr><td>Medicalia-RRHH</td><td><code>\\GenteOperativa\Datos$\RRHH</code></td></tr>
+<tr><td>Medicalia-Nutricion</td><td><code>\\GenteOperativa\Datos$\Nutricion</code></td></tr>
+<tr><td>Medicalia-Financiero</td><td><code>\\GenteOperativa\Datos$\Financiero</code></td></tr>
+<tr><td>Medicalia-Operaciones</td><td><code>\\GenteOperativa\Datos$\Operaciones</code></td></tr>
+</table>
+<p>Para cada fila: <code>gpmc.msc</code> → Medicalia → UO del departamento → <code>Medicalia-&lt;Departamento&gt;</code> → Editar → Configuración de usuario → Preferencias → Configuración de Windows → <b>Asignaciones de unidades</b> → Nuevo → Unidad asignada:</p>
+<ul>
+<li><b>Acción:</b> Actualizar · <b>Ubicación:</b> la ruta de la tabla · <b>Volver a conectar:</b> marcado</li>
+<li><b>Etiquetar como:</b> el nombre del departamento · <b>Usar:</b> T:</li>
+<li>Pestaña <b>Comunes</b>: marcar «Ejecutar en el contexto de seguridad del usuario que inició sesión».</li>
+</ul>
+
+<h2>Comprobaciones desde el cliente</h2>
+<table>
+<tr><th>Usuario</th><th>Prueba</th><th>Resultado esperado</th></tr>
+<tr><td>ssanchez (Operaciones)</td><td>Mirar el escritorio y «Este equipo»</td><td>Fondo de Operaciones, unidades P: y T:</td></tr>
+<tr><td>jperez (Almacén)</td><td>Abrir T: y crear un archivo</td><td>Muestra Almacén y deja escribir</td></tr>
+<tr><td>jperez</td><td>Abrir <code>\\GenteOperativa\Datos$\RRHH</code></td><td>Acceso denegado</td></tr>
+<tr><td>mballester (Presidencia)</td><td>Abrir T:</td><td>Ve los seis departamentos, solo en lectura</td></tr>
+<tr><td>Admin_GenteOperativa</td><td>Iniciar sesión</td><td>Fondo normal: las GPO de departamento no le afectan</td></tr>
+</table>
+<p class="note">Como cada empleado solo entra desde su equipo, para probar con otros usuarios en el mismo cliente se les añade temporalmente ese equipo a <code>LogonWorkstations</code> y después se restaura.</p>
+
+<h2>Decisiones</h2>
+<div class="grid">
+<div class="card accent"><h3>Una GPO por departamento</h3><p>Separar fondo y unidad por departamento permite cambiar uno sin tocar a los demás.</p></div>
+<div class="card accent"><h3>Fondos en SYSVOL</h3><p>Están disponibles desde cualquier equipo del dominio y se replican con el controlador.</p></div>
+<div class="card accent"><h3>Una sola letra, T:</h3><p>Todos los empleados encuentran su departamento en la misma unidad, y P: queda para la carpeta personal.</p></div>
+</div>
+
+</div>
+</body>
+</html>

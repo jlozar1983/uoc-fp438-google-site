@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miniguía 5 · Directivas de seguridad y contraseñas</title>
+</head>
+<body>
+<!-- Insertar en Google Sites: Insertar > Por URL > Página completa -->
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2937;background:#fff;line-height:1.55;font-size:15px}
+.w{max-width:960px;margin:0 auto;padding:8px 16px 24px}
+h1{font-size:26px;color:#0b2a6f;margin:8px 0 4px}
+h2{font-size:19px;color:#0b2a6f;margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid #12b5cb}
+h3{font-size:16px;margin:14px 0 6px;color:#0b2a6f}
+p{margin:0 0 10px}
+.lead{color:#475569;font-size:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{border:1px solid #dbe3ef;border-radius:10px;padding:14px 16px;background:#f8fafc}
+.card.accent{border-left:4px solid #0b2a6f}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#075985;margin:2px 4px 2px 0}
+.tag.done{background:#dcfce7;color:#166534}.tag.wip{background:#fef9c3;color:#854d0e}.tag.todo{background:#f1f5f9;color:#475569}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 12px}
+th{background:#0b2a6f;color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+td{border-bottom:1px solid #e5e7eb;padding:8px 10px;vertical-align:top}
+tr:nth-child(even) td{background:#f8fafc}
+a{color:#0b5bd3}
+code{font-family:Consolas,'Courier New',monospace;font-size:13px;background:#eef2f7;padding:1px 5px;border-radius:4px}
+pre{background:#0b2a6f;color:#e6f7fb;border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:13px;line-height:1.5;margin:6px 0 14px}
+pre code{background:none;padding:0;color:inherit;font-size:13px}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;font-size:15px}
+.kv b{color:#0b2a6f}
+.note{font-size:13px;color:#64748b;border-left:3px solid #cbd5e1;padding:4px 10px;margin:10px 0}
+.step{display:flex;gap:12px;align-items:flex-start;margin:18px 0 6px}
+.step .n{flex:none;width:30px;height:30px;border-radius:50%;background:#12b5cb;color:#0b2a6f;font-weight:700;display:flex;align-items:center;justify-content:center}
+.step h3{margin:4px 0 0}
+figure{margin:8px 0 16px}figure img{max-width:100%;border:1px solid #dbe3ef;border-radius:8px}
+figcaption{font-size:13px;color:#64748b;margin-top:4px}
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.gal img{width:100%;border-radius:8px;border:1px solid #dbe3ef}
+ul{margin:4px 0 10px;padding-left:20px}li{margin:3px 0}
+@media(max-width:560px){.kv{grid-template-columns:1fr}table{font-size:13px}}
+</style>
+
+<div class="w">
+<h1>Miniguía 5 · Directivas de seguridad y contraseñas</h1>
+<p><span class="tag done">Bloque 5</span><span class="tag">Responsable: Nityan</span><span class="tag">Revisor: Xavier</span></p>
+<p class="lead">Aplicamos las directivas comunes de ciberseguridad a todos los empleados, sin que afecten a los administradores del dominio, y la política de contraseñas y bloqueo de cuentas. Usamos PowerShell siempre que es posible y la consola gráfica solo donde no hay alternativa.</p>
+
+<h2>Mapa de directivas</h2>
+<p>Las GPO se vinculan a unidades organizativas. Como los empleados están en la UO <b>Medicalia</b> y los administradores en <b>Administradores</b>, las restricciones no afectan a estos últimos sin necesidad de filtros.</p>
+<table>
+<tr><th>Directiva del enunciado</th><th>Tipo</th><th>Dónde se aplica</th></tr>
+<tr><td>Página de inicio http://www.Medicalia.org/</td><td>Usuario</td><td>GPO <code>Medicalia-Empleados-Usuario</code> → UO Medicalia</td></tr>
+<tr><td>No ejecutar .exe de C:\Windows\System32</td><td>Usuario</td><td>La misma (restricción de software)</td></tr>
+<tr><td>Sin acceso al registro</td><td>Usuario</td><td>La misma</td></tr>
+<tr><td>Sin consola de PowerShell</td><td>Usuario</td><td>La misma</td></tr>
+<tr><td>Sin Panel de control</td><td>Usuario</td><td>La misma</td></tr>
+<tr><td>No guardar en «Mis Documentos»</td><td>Usuario</td><td>La misma (script de inicio de sesión)</td></tr>
+<tr><td>No cambiar la hora</td><td>Equipo</td><td>GPO <code>Medicalia-Empleados-Equipo</code> → UO Equipos</td></tr>
+<tr><td>Contraseña cada 120 días, sin repetir las 12 anteriores</td><td>Contraseñas</td><td>PSO sobre los seis grupos de departamento</td></tr>
+<tr><td>Bloqueo de 5 minutos tras 3 intentos</td><td>Contraseñas</td><td>La misma PSO</td></tr>
+</table>
+
+<div class="step"><div class="n">1</div><h3>Crear las GPO base</h3></div>
+<p>Una GPO solo de usuario y otra solo de equipo: cada una procesa únicamente lo que le corresponde.</p>
+<pre><code>Import-Module GroupPolicy, ActiveDirectory
+$dn   = (Get-ADDomain).DistinguishedName
+$gpoU = "Medicalia-Empleados-Usuario"
+$gpoE = "Medicalia-Empleados-Equipo"
+New-GPO -Name $gpoU -Comment "Restricciones de usuario para empleados" | Out-Null
+New-GPLink -Name $gpoU -Target "OU=Medicalia,$dn" -LinkEnabled Yes | Out-Null
+(Get-GPO -Name $gpoU).GpoStatus = "ComputerSettingsDisabled"
+New-GPO -Name $gpoE -Comment "Restricciones de equipo para empleados" | Out-Null
+New-GPLink -Name $gpoE -Target "OU=Equipos,$dn" -LinkEnabled Yes | Out-Null
+(Get-GPO -Name $gpoE).GpoStatus = "UserSettingsDisabled"
+# Función auxiliar: escribe un valor de registro en la GPO de usuario
+function Pol { param($Key,$Name,$Type,$Value)
+    Set-GPRegistryValue -Name $gpoU -Key $Key -ValueName $Name -Type $Type -Value $Value | Out-Null }</code></pre>
+
+<div class="step"><div class="n">2</div><h3>Página de inicio, registro, Panel de control y PowerShell</h3></div>
+<pre><code>$edge = "HKCU\Software\Policies\Microsoft\Edge"
+Pol $edge "HomepageLocation" String "http://www.Medicalia.org/"
+Pol $edge "HomepageIsNewTabPage" DWord 0
+Pol $edge "ShowHomeButton" DWord 1
+Pol $edge "RestoreOnStartup" DWord 4          # 4 = abrir una lista de páginas
+Pol "$edge\RestoreOnStartupURLs" "1" String "http://www.Medicalia.org/"
+
+$sys = "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System"
+$exp = "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer"
+Pol $sys "DisableRegistryTools" DWord 2       # 2 = bloquea también regedit /s
+Pol $exp "NoControlPanel" DWord 1             # también la app Configuración
+Pol $exp "DisallowRun" DWord 1
+Pol "$exp\DisallowRun" "1" String "powershell.exe"
+Pol "$exp\DisallowRun" "2" String "powershell_ise.exe"
+Pol "$exp\DisallowRun" "3" String "pwsh.exe"</code></pre>
+<p class="note">DisallowRun solo frena lo que se lanza desde el Explorador. La regla de System32 del paso siguiente cierra el hueco, porque powershell.exe está dentro de System32.</p>
+
+<div class="step"><div class="n">3</div><h3>Impedir ejecutar .exe de C:\Windows\System32</h3></div>
+<p>Usamos las directivas de restricción de software: una regla de ruta concreta gana al nivel predeterminado. Dejamos el nivel predeterminado sin restricción, bloqueamos System32 y añadimos excepciones para los procesos que el propio escritorio necesita.</p>
+<pre><code>$safer = "HKCU\Software\Policies\Microsoft\Windows\Safer\CodeIdentifiers"
+Pol $safer "DefaultLevel" DWord 262144       # sin restricción por defecto
+Pol $safer "PolicyScope" DWord 0
+Pol $safer "TransparentEnabled" DWord 1      # vigila .exe, no DLL
+function Regla-Ruta { param($Nivel,$Ruta)     # 0 = no permitido · 262144 = sin restricción
+    $k = "$safer\$Nivel\Paths\{$([guid]::NewGuid())}"
+    Pol $k "ItemData" ExpandString $Ruta
+    Pol $k "SaferFlags" DWord 0 }
+Regla-Ruta 0 "%SystemRoot%\System32"
+foreach ($exe in "userinit","conhost","ctfmon","sihost","taskhostw","RuntimeBroker","dllhost",
+                 "dwm","fontdrvhost","ApplicationFrameHost","WerFault","gpscript","cmd","icacls",
+                 "backgroundTaskHost","smartscreen") {
+    Regla-Ruta 262144 "%SystemRoot%\System32\$exe.exe"
+}</code></pre>
+<p class="note"><code>cmd</code> e <code>icacls</code> están en la lista porque los usa el script de «Mis Documentos» del paso 4.</p>
+
+<div class="step"><div class="n">4</div><h3>Impedir guardar en «Mis Documentos»</h3></div>
+<p>Un script de inicio de sesión, guardado en SYSVOL dentro de la propia GPO, deniega al usuario la escritura en su carpeta Documentos:</p>
+<pre><code>$id   = (Get-GPO -Name $gpoU).Id
+$dest = "\\$env:USERDNSDOMAIN\SYSVOL\$env:USERDNSDOMAIN\Policies\{$id}\User\Scripts\Logon"
+New-Item -Path $dest -ItemType Directory -Force | Out-Null
+@('@echo off',
+  'icacls "%USERPROFILE%\Documents" /deny "%USERDOMAIN%\%USERNAME%:(OI)(CI)(WD,AD)"') |
+  Set-Content -Path "$dest\bloquear_docs.cmd" -Encoding ASCII</code></pre>
+<p>Para que la GPO lo ejecute, se registra en la consola: <code>gpmc.msc</code> → Medicalia → <code>Medicalia-Empleados-Usuario</code> → Editar → Configuración de usuario → Directivas → Configuración de Windows → Scripts → Iniciar sesión → Agregar → <code>bloquear_docs.cmd</code>.</p>
+
+<div class="step"><div class="n">5</div><h3>Impedir cambiar la hora (directiva de equipo)</h3></div>
+<p>Los derechos de usuario son una configuración de equipo y no tienen cmdlet, así que se hace en la consola: <code>gpmc.msc</code> → Equipos → <code>Medicalia-Empleados-Equipo</code> → Editar → Configuración del equipo → Directivas → Configuración de Windows → Configuración de seguridad → Directivas locales → Asignación de derechos de usuario → <b>Cambiar la hora del sistema</b> → solo <b>Administradores</b> y <b>SERVICIO LOCAL</b>.</p>
+<p class="note">SERVICIO LOCAL se mantiene para que el servicio de hora de Windows siga sincronizando el reloj.</p>
+
+<div class="step"><div class="n">6</div><h3>Contraseñas y bloqueo de cuenta (PSO)</h3></div>
+<p>Una directiva de contraseñas en GPO solo se aplica a todo el dominio y afectaría también a los administradores. Por eso usamos un objeto de configuración de contraseñas (PSO), que se asigna a grupos:</p>
+<pre><code>$pso = @{
+    Name = "PSO_Empleados"; Precedence = 10
+    MaxPasswordAge = "120.00:00:00"     # cambio cada 120 días
+    MinPasswordAge = "0.00:00:00"
+    PasswordHistoryCount = 12           # no repetir las 12 anteriores
+    MinPasswordLength = 8; ComplexityEnabled = $true; ReversibleEncryptionEnabled = $false
+    LockoutThreshold = 3                # 3 intentos fallidos
+    LockoutDuration = "00:05:00"        # bloqueo de 5 minutos
+    LockoutObservationWindow = "00:05:00"
+}
+New-ADFineGrainedPasswordPolicy @pso
+Add-ADFineGrainedPasswordPolicySubject -Identity "PSO_Empleados" `
+    -Subjects 'G_Almacen','G_RRHH','G_Nutricion','G_Financiero','G_Operaciones','G_Presidencia'
+Get-ADUserResultantPasswordPolicy -Identity pgamez                 # PSO_Empleados
+Get-ADUserResultantPasswordPolicy -Identity Admin_GenteOperativa   # sin PSO</code></pre>
+
+<div class="step"><div class="n">7</div><h3>Directiva adicional: almacenamiento USB</h3></div>
+<p>Además de lo que pide el cliente, bloqueamos el acceso a memorias USB y discos externos en los equipos de los empleados, para evitar la fuga de datos de pacientes y la entrada de software no autorizado:</p>
+<pre><code>Set-GPRegistryValue -Name $gpoE -Key "HKLM\Software\Policies\Microsoft\Windows\RemovableStorageDevices" `
+    -ValueName "Deny_All" -Type DWord -Value 1</code></pre>
+<p class="note">Equivale a «Todas las clases de almacenamiento extraíble: denegar acceso a todo», en Plantillas administrativas → Sistema → Acceso de almacenamiento extraíble.</p>
+
+<h2>Pruebas desde el cliente</h2>
+<p>En el cliente, como administrador: <code>gpupdate /force</code> y reiniciar. Después iniciamos sesión con un empleado.</p>
+<table>
+<tr><th>Prueba</th><th>Resultado esperado</th></tr>
+<tr><td>Cambiar la contraseña por una muy corta o por la actual</td><td>Se rechaza (longitud e historial)</td></tr>
+<tr><td>Abrir Edge</td><td>Se abre http://www.Medicalia.org/</td></tr>
+<tr><td>Win + R → <code>regedit</code></td><td>«El administrador ha deshabilitado las herramientas de edición del Registro»</td></tr>
+<tr><td>Win + R → <code>control</code>, o abrir Configuración</td><td>Operación cancelada por restricciones</td></tr>
+<tr><td>Abrir PowerShell desde Inicio o con Win + R</td><td>Bloqueado</td></tr>
+<tr><td>Win + R → <code>C:\Windows\System32\charmap.exe</code></td><td>Bloqueado por la restricción de software</td></tr>
+<tr><td><code>cmd</code> → <code>time 12:00</code></td><td>«No se dispone de un privilegio necesario»</td></tr>
+<tr><td>Crear un archivo en Documentos</td><td>Acceso denegado</td></tr>
+<tr><td>Conectar una memoria USB</td><td>No se puede abrir</td></tr>
+<tr><td>Tres contraseñas incorrectas</td><td>Cuenta bloqueada 5 minutos (<code>Get-ADUser -Properties LockedOut</code> da True)</td></tr>
+<tr><td>Iniciar sesión como <code>Admin_GenteOperativa</code></td><td>Nada de lo anterior le afecta</td></tr>
+</table>
+
+<h2>Decisiones</h2>
+<div class="grid">
+<div class="card accent"><h3>GPO de usuario y de equipo separadas</h3><p>La página de inicio sigue al usuario; la hora y los USB dependen del equipo, lo use quien lo use.</p></div>
+<div class="card accent"><h3>PSO</h3><p>Permite exigir 120 días, historial de 12 y bloqueo solo a los empleados.</p></div>
+<div class="card accent"><h3>Restricción de software</h3><p>Bloquea System32 entero y deja pasar solo lo que el escritorio necesita.</p></div>
+</div>
+
+<h2>Problemas frecuentes</h2>
+<table>
+<tr><th>Problema</th><th>Solución</th></tr>
+<tr><td>Una directiva no se aplica</td><td><code>gpupdate /force</code>, cerrar sesión o reiniciar; revisar con <code>gpresult /r</code></td></tr>
+<tr><td>Escritorio vacío o no se puede iniciar sesión</td><td>La regla de System32 bloquea un .exe necesario: añadirlo a las excepciones</td></tr>
+<tr><td>Edge no muestra la página</td><td>Abrirlo, aceptar los términos, cerrarlo y volver a abrirlo</td></tr>
+<tr><td>La PSO no aparece en un usuario</td><td>Comprobar que está en uno de los seis grupos</td></tr>
+</table>
+
+</div>
+</body>
+</html>
