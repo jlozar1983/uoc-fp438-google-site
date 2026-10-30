@@ -1,0 +1,12 @@
+# Este repo se publica entero en internet: no subir material de la asignatura ni documentos del grupo
+*.docx
+*.doc
+*.pdf
+*.pptx
+*.xlsx
+*.zip
+*.mp4
+*.mov
+*.iso
+~$*
+*.code-workspace

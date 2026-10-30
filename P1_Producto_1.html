@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P1 · Implementación del dominio de Windows</title>
+</head>
+<body>
+<!-- Insertar en Google Sites: Insertar > Por URL > Página completa -->
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2937;background:#fff;line-height:1.55;font-size:15px}
+.w{max-width:960px;margin:0 auto;padding:8px 16px 24px}
+h1{font-size:26px;color:#0b2a6f;margin:8px 0 4px}
+h2{font-size:19px;color:#0b2a6f;margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid #12b5cb}
+h3{font-size:16px;margin:0 0 6px;color:#0b2a6f}
+p{margin:0 0 10px}
+.lead{color:#475569;font-size:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{border:1px solid #dbe3ef;border-radius:10px;padding:14px 16px;background:#f8fafc}
+.card.accent{border-left:4px solid #0b2a6f}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#075985;margin:2px 4px 2px 0}
+.tag.done{background:#dcfce7;color:#166534}.tag.wip{background:#fef9c3;color:#854d0e}.tag.todo{background:#f1f5f9;color:#475569}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 12px}
+th{background:#0b2a6f;color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+td{border-bottom:1px solid #e5e7eb;padding:8px 10px;vertical-align:top}
+tr:nth-child(even) td{background:#f8fafc}
+a{color:#0b5bd3}
+code{font-size:13px;background:#eef2f7;padding:1px 5px;border-radius:4px}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;font-size:15px}
+.kv b{color:#0b2a6f}
+.note{font-size:13px;color:#64748b;border-left:3px solid #cbd5e1;padding:4px 10px;margin:10px 0}
+ul{margin:4px 0 10px;padding-left:20px}li{margin:3px 0}
+@media(max-width:560px){.kv{grid-template-columns:1fr}table{font-size:13px}}
+</style>
+
+<div class="w">
+
+<h1>Producto 1 · Implementación del dominio de Windows</h1>
+<p><span class="tag wip">En entrega</span><span class="tag">Entrega: 31 oct 2026</span><span class="tag">Cliente: Medicalia</span></p>
+<p class="lead"><b>Objetivo:</b> implantar el Directorio Activo de Medicalia en un Windows Server 2022, con los recursos de red y las directivas de grupo que pide el cliente, y demostrarlo desde un cliente Windows 11 unido al dominio.</p>
+
+<h2>Nuestro laboratorio</h2>
+<p>Cada integrante ha montado su propio laboratorio en VirtualBox con los mismos nombres y direcciones, para que cualquiera pudiera repetir cualquier parte del trabajo.</p>
+<div class="kv">
+<b>Dominio</b><span><code>medicalia.local</code> (NetBIOS <code>MEDICALIA</code>)</span>
+<b>Servidor</b><span>Windows Server 2022, equipo <code>GenteOperativa</code>, IP fija 10.0.2.10</span>
+<b>Red</b><span>Red NAT de VirtualBox <code>Medicalia</code>, 10.0.2.0/24, sin DHCP</span>
+<b>Discos</b><span>50 GB para el sistema, 10 GB y 30 GB para datos y copias</span>
+<b>Cliente</b><span>Windows 11 Pro, equipo <code>PC-SSANCHEZ</code>, IP 10.0.2.20</span>
+<b>Administración</b><span>Cuenta <code>Admin_GenteOperativa</code>, miembro de Admins. del dominio</span>
+</div>
+
+<h2>Cómo nos hemos organizado</h2>
+<p>Dividimos el producto en seis bloques, uno por persona. El responsable resolvía su bloque primero y lo documentaba en una miniguía. Otro compañero la repetía en su máquina para revisarla. Cada bloque aporta además su tramo al vídeo final.</p>
+<table>
+<tr><th>Bloque</th><th>Responsable</th><th>Revisa</th><th>Qué se ha hecho</th></tr>
+<tr><td>1 · Servidor, discos y dominio</td><td>Nacho</td><td>Unai</td><td>IP fija, particionado con <code>diskpart</code> (E: Copias_AD distribuido entre los discos 1 y 2, F: Ficheros) y bosque <code>medicalia.local</code> con DNS y reenviador.</td></tr>
+<tr><td>2 · Usuarios, grupos y UO</td><td>Unai</td><td>Nadia</td><td>UO <code>Medicalia</code> con una UO por departamento, grupos <code>G_&lt;departamento&gt;</code>, 20 empleados creados desde una plantilla CSV con PowerShell y la cuenta de administración del grupo.</td></tr>
+<tr><td>3 · Carpetas compartidas y permisos</td><td>Nadia</td><td>Ester</td><td>Recursos ocultos <code>Datos$</code>, <code>Personal$</code> y <code>Perfiles$</code> en F:, permisos NTFS por grupo, carpeta personal exclusiva y solo lectura para Presidencia.</td></tr>
+<tr><td>4 · Cliente W11 y perfiles móviles</td><td>Ester</td><td>Nityan</td><td>Cliente unido al dominio, inicio de sesión limitado al equipo de cada empleado, perfiles móviles en <code>F:\Perfiles</code> y administración remota con RSAT.</td></tr>
+<tr><td>5 · Directivas de seguridad</td><td>Nityan</td><td>Xavier</td><td>GPO de usuario y de equipo para los empleados y PSO de contraseñas: 120 días, historial de 12 y bloqueo de 5 minutos tras 3 fallos.</td></tr>
+<tr><td>6 · Directivas por departamento y vídeo</td><td>Xavier</td><td>Nacho</td><td>Una GPO por departamento con su fondo de escritorio desde SYSVOL y su unidad de red; guion y montaje del vídeo.</td></tr>
+</table>
+
+<h2>Cómo cumplimos lo que pide el cliente</h2>
+<table>
+<tr><th>Requisito</th><th>Solución</th></tr>
+<tr><td>Empleados organizados por departamento</td><td>Una UO por departamento dentro de la UO <code>Medicalia</code>, cada una con su grupo de seguridad.</td></tr>
+<tr><td>Cada empleado solo entra desde su ordenador</td><td>Atributo <code>LogonWorkstations</code> de cada usuario apuntando a su equipo, creado desde la misma plantilla.</td></tr>
+<tr><td>Carpeta personal privada</td><td><code>F:\Personal\&lt;usuario&gt;</code> con la herencia cortada; solo accede el propio usuario. Se monta como unidad P:.</td></tr>
+<tr><td>Carpeta por departamento</td><td><code>F:\Datos\&lt;departamento&gt;</code> con permiso de modificación para su grupo.</td></tr>
+<tr><td>Presidencia: solo lectura, sin carpetas personales</td><td>Lectura y ejecución en cada carpeta de departamento y ningún permiso en <code>F:\Personal</code>.</td></tr>
+<tr><td>Perfil móvil para Operaciones</td><td>Ruta de perfil en <code>\\GenteOperativa\Perfiles$</code> con permisos mínimos (CREATOR OWNER): cada usuario solo ve su perfil.</td></tr>
+<tr><td>Directivas de ciberseguridad (salvo administradores)</td><td>Página de inicio, sin System32, registro, PowerShell, Panel de control, cambio de hora ni «Mis Documentos». Los administradores están en una UO aparte y no les afectan.</td></tr>
+<tr><td>Contraseñas y bloqueo</td><td>PSO asignada a los grupos de departamento: cambio cada 120 días, sin repetir las 12 anteriores y bloqueo de 5 minutos tras 3 intentos.</td></tr>
+<tr><td>Fondo y unidades por departamento</td><td>GPO por departamento con su fondo servido desde SYSVOL y su unidad de red asignada.</td></tr>
+<tr><td>Administrar desde cualquier equipo</td><td><code>Admin_GenteOperativa</code> en Admins. del dominio y herramientas RSAT en el cliente Windows 11.</td></tr>
+</table>
+
+<h2>Decisiones que tomamos</h2>
+<div class="grid">
+<div class="card accent"><h3>Automatizar</h3><p>PowerShell y plantillas siempre que se podía: el laboratorio se repite igual en cualquier equipo y sin errores de escritura.</p></div>
+<div class="card accent"><h3>Permisos por grupos</h3><p>Los permisos se dan a grupos y no a usuarios. Si alguien cambia de departamento, solo se cambia su grupo.</p></div>
+<div class="card accent"><h3>Administradores aparte</h3><p>Su propia UO, fuera de <code>Medicalia</code>, para que las directivas de los empleados no les afecten.</p></div>
+<div class="card accent"><h3>PSO en vez de directiva de dominio</h3><p>La política de contraseñas se aplica solo a los empleados, sin tocar a los administradores.</p></div>
+</div>
+
+<h2>Entrega</h2>
+<p>Vídeo de 8 a 10 minutos en YouTube, con la marca de agua <b>Gente Operativa</b>, que muestra el servidor configurado y las pruebas desde el cliente Windows 11.</p>
+<p class="note">Enlace al vídeo: se añadirá aquí cuando esté publicado.</p>
+
+</div>
+</body>
+</html>
